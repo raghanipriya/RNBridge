@@ -1,130 +1,159 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect} from 'react';
 import {
-  ScrollView,
-  StatusBar,
+  Alert,
+  Button,
+  Linking,
+  NativeModules,
   StyleSheet,
   Text,
-  useColorScheme,
+  TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const {BatteryModule} = NativeModules;
+import NativeLocalStorage from './specs/NativeLocalStorage';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+import NativeBatteryLevel from './specs/NativeBatteryLevel';
+import {useFilterStore} from './src/store/useFilterStore';
+import {NavigationContainer} from '@react-navigation/native';
+import {StackNavigator} from './src/navigation/StackNavigator';
+import AppWrapper from './src/components/appWrapper';
+import {OfflineBanner} from './src/components/offlineBanner';
+import {linking} from './src/navigation/linking';
+console.log('🚀 ~ NativeBatteryLevel:', NativeBatteryLevel);
+import messaging from '@react-native-firebase/messaging';
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const EMPTY = '<empty>';
+
+const filterOptions = [
+  'Open',
+  'Closed',
+  'Standby',
+  'In process',
+  'Complete',
+  'Cancle',
+];
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [value, setValue] = React.useState<string | null>(null);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  const [editingValue, setEditingValue] = React.useState<string | null>(null);
+  const {status, setStatus} = useFilterStore();
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+  useEffect(() => {
+    const storedValue = NativeLocalStorage?.getItem('myKey');
+    setValue(storedValue ?? '');
+  }, []);
+
+  useEffect(() => {
+    requestUserPermission();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      const url = remoteMessage?.data?.deepLink;
+      console.log('\n\n 🚀 ~ App ~ url:', url);
+      if (url) Linking.openURL(url);
+    });
+
+    const unsubscribeNoti = messaging().onNotificationOpenedApp(
+      remoteMessage => {
+        const url = remoteMessage?.data?.deepLink;
+        if (url) Linking.openURL(url);
+      },
+    );
+
+    // App quit → opened by notification
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        const url = remoteMessage?.data?.deepLink;
+        if (url) Linking.openURL(url);
+      });
+
+    return () => {
+      unsubscribe;
+      unsubscribeNoti;
+    };
+  }, []);
+
+  useEffect(() => {
+    const sub = Linking.addEventListener('url', ({url}) => {
+      console.log('Deep link opened:', url);
+    });
+
+    Linking.getInitialURL().then(url => {
+      if (url) console.log('App opened from:', url);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    console.log('🚀 ~ requestUserPermission ~ enabled:', enabled);
+
+    if (enabled) {
+      const fcm_token = await messaging().getToken();
+      console.log('\n\n 🚀 ~ requestUserPermission ~ fcm_token:', fcm_token);
+      console.log('Authorization status:', authStatus);
+    }
+  }
+
+  function saveValue() {
+    NativeLocalStorage?.setItem(editingValue ?? EMPTY, 'myKey');
+    setValue(editingValue);
+  }
+
+  function clearAll() {
+    NativeLocalStorage?.clear();
+    setValue('');
+  }
+
+  function deleteValue() {
+    NativeLocalStorage?.removeItem('myKey');
+    setValue('');
+  }
+
+  function getBatteryLevel() {
+    const level = NativeBatteryLevel.getBatteryLevel();
+    Alert.alert(`Your phone's battery level is ${level}`);
+  }
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <AppWrapper>
+      <NavigationContainer linking={linking}>
+        <OfflineBanner />
+        <StackNavigator />
+      </NavigationContainer>
+    </AppWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  text: {
+    margin: 10,
+    fontSize: 20,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  textInput: {
+    margin: 10,
+    height: 40,
+    borderColor: 'black',
+    borderWidth: 1,
+    paddingLeft: 5,
+    paddingRight: 5,
+    borderRadius: 5,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  buttonStyle: {
+    marginVertical: 12,
   },
-  highlight: {
-    fontWeight: '700',
+  textStyle: {
+    fontSize: 20,
+    marginVertical: 1,
   },
 });
 
