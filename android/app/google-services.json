@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1070763102946",
+    "project_id": "rn-crashes",
+    "storage_bucket": "rn-crashes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070763102946:android:a4ff52a3cfa99f103184bb",
+        "android_client_info": {
+          "package_name": "com.rnbridge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD52oeUGpBVA3ojkTJ1HyaANjgHsFXyMOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
