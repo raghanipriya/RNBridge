@@ -42,5 +42,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-        name: rnbridge-${{ env.DATE }}
-        path: android/app/build/outputs/apk/release/rnbridge-${{ env.DATE }}.apk
+          name: rnbridge-${{ env.DATE }}
+          path: android/app/build/outputs/apk/release/rnbridge-${{ env.DATE }}.apk
