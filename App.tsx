@@ -53,6 +53,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       const url = remoteMessage?.data?.deepLink;
+      Alert.alert('url', url);
       console.log('\n\n 🚀 ~ App ~ url:', url);
       if (url) Linking.openURL(url);
     });
@@ -60,6 +61,7 @@ function App(): React.JSX.Element {
     const unsubscribeNoti = messaging().onNotificationOpenedApp(
       remoteMessage => {
         const url = remoteMessage?.data?.deepLink;
+        Alert.alert('url', url);
         if (url) Linking.openURL(url);
       },
     );
@@ -69,6 +71,7 @@ function App(): React.JSX.Element {
       .getInitialNotification()
       .then(remoteMessage => {
         const url = remoteMessage?.data?.deepLink;
+        Alert.alert('url', url);
         if (url) Linking.openURL(url);
       });
 
@@ -99,6 +102,7 @@ function App(): React.JSX.Element {
 
     if (enabled) {
       const fcm_token = await messaging().getToken();
+      Alert.alert('Token', fcm_token);
       console.log('\n\n 🚀 ~ requestUserPermission ~ fcm_token:', fcm_token);
       console.log('Authorization status:', authStatus);
     }

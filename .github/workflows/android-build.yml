@@ -32,8 +32,15 @@ jobs:
       - name: Build Android APK
         run: cd android && ./gradlew assembleRelease
 
-      - name: Upload APK Artifact
+      - name: Get current date
+        id: date
+        run: echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
+
+      - name: Rename APK
+        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/rnbridge-${{ env.DATE }}.apk
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: android/app/build/outputs/apk/release/app-release.apk
+        name: rnbridge-${{ env.DATE }}
+        path: android/app/build/outputs/apk/release/rnbridge-${{ env.DATE }}.apk
